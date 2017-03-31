@@ -1,9 +1,16 @@
 AV.init({
-  appId: 'ozewwcwsyq92g2hommuxqrqzg6847wgl8dtrac6suxzko333',
-  appKey: 'ni0kwg7h8hwtz6a7dw9ipr7ayk989zo5y8t0sn5gjiel6uav',
+  appId: 'F7YiUa3lYin9ECKEskfH48zg-gzGzoHsz',
+  appKey: 'LEBBe2xbpweQp8C4kinHYGiW',
+  //appId: 'ozewwcwsyq92g2hommuxqrqzg6847wgl8dtrac6suxzko333',
+  //appKey: 'ni0kwg7h8hwtz6a7dw9ipr7ayk989zo5y8t0sn5gjiel6uav',
 })
+//todo 使用自己的仓库测试
+//wwj wwjtest xx xx user
+//https://leancloud.cn/docs/realtime_guide-js.html#未读消息数量通知
+//paperweekly/note_project/通知系统.md
 var realtime = new AV.Realtime({
-  appId: 'ozewwcwsyq92g2hommuxqrqzg6847wgl8dtrac6suxzko333',
+  appId: 'F7YiUa3lYin9ECKEskfH48zg-gzGzoHsz',
+  //appId:'ozewwcwsyq92g2hommuxqrqzg6847wgl8dtrac6suxzko333',
 })
 var LiveReload = {
   client: null,
@@ -13,8 +20,11 @@ var LiveReload = {
       this.client = null;
     }
   },
+  //https://leancloud.cn/docs/realtime_guide-js.html#发送消息
   login: function(clientId) {
+    //?:Promise.resolve
     if (this.client && this.client.id === clientId) return Promise.resolve(this.client)
+    //https://leancloud.cn/docs/realtime_guide-js.html#对话
     return realtime.createIMClient(clientId).then(function(client) {
       this.client = client
       return client
@@ -53,27 +63,44 @@ var app = new Vue({
     password: '',
     user: null
   },
-  
+
   created: function() {
     var user = AV.User.current()
     if (user) {
       // user.isAuthenticated().then(function(authenticated) {
       //   if (authenticated) {
-          this.user = user.toJSON()
+          this.user = user.toJSON();
+          //console.debug({"AV.User.current:":user});
       //   }
       // }.bind(this))
     }
   },
-
+  //Vue 实例将会在实例化时调用 $watch()，遍历 watch 对象的每一个属性。
   watch: {
+    //键是需要观察的表达式，值是对应回调函数
     'user.objectId': {
       handler: function (id) {
+        //user id
         if (id) {
           this.fetchTodos(id)
+          //用户id作为clientid: `login: function(clientId)`
           LiveReload.login(id).then(function(client) {
-            return client.getConversation('58b8de7444d904006bee4ded')
+            // https://leancloud.cn/docs/realtime_guide-js.html#成员变更事件 加入聊天
+
+//window.client=client;
+
+/*
+  return client.createConversation({
+    members: ["wwj","xx","58de1bc2da2f60005fbf5c3e","*"], //把用户id加进去 ，所有用户?
+    name: 'Conversation_test',
+  }).then(function(conversation) {
+  // 发送消息
+  console.debug(conversation.id);//58de299e44d9040058bfad9e
+});  */
+            return client.getConversation('58de3353128fe1005dcfc8e9'); //获取对话  在leancloud管理界 main 消息/对话里 
           }).then(function(conversation) {
             conversation.on('message', function() {
+              //同时编辑的时候 同步
               if (Date.now() < this.lastReloadTime + 1000) return;
               this.fetchTodos(id)
               this.lastReloadTime = Date.now();
@@ -138,7 +165,7 @@ var app = new Vue({
         this.username = this.password = ''
       }.bind(this)).catch(alert)
     },
-    
+
     signup: function() {
       AV.User.signUp(this.username, this.password).then(function(user) {
         this.user = user.toJSON()
@@ -151,7 +178,7 @@ var app = new Vue({
       this.user = null
       LiveReload.logout()
     },
-    
+
     addTodo: function () {
       var value = this.newTodo && this.newTodo.trim()
       if (!value) {
